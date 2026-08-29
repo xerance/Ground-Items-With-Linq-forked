@@ -24,6 +24,7 @@ public class CustomItemData(
     public ColorBGRA BackgroundColor { get; set; } = label.BgColor;
     public string LabelText { get; set; } = label.Text;
     public long LabelAddress { get; set; } = label.Address;
+    public Element Label { get; set; } = label;
     public bool? IsWanted { get; set; }
     public Vector2 Location { get; set; } = worldEntity.GridPosNum;
 
@@ -36,6 +37,10 @@ public class CustomItemData(
             .Where(x => !x.StartsWith("Replica "))
             .ToList()
             : [];
+
+    public bool IsUnidentifiedUnique { get; set; }
+        = queriedItem.TryGetComponent<Mods>(out var rarityMods) && !rarityMods.Identified &&
+          rarityMods.ItemRarity == ItemRarity.Unique;
 
     public float DistanceCustom { get; set; }
 
@@ -51,4 +56,4 @@ public static class ItemExtensions
     {
         if (item.IsWanted == true) item.DistanceCustom = item.GameController.Player.GridPosNum.Distance(item.Location);
     }
-}
+}

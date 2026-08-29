@@ -107,6 +107,8 @@ public class GroundItemsWithLinq : BaseSettingsPlugin<GroundItemsWithLinqSetting
             _ => StoredCustomItems.Where(item => item.IsWanted == true).ToList()
         };
 
+        GroundNameOverlay.Render(StoredCustomItems);
+
         if (wantedItems.Count <= 0) return;
 
         DrawingLabels.RenderItemsOnScreen(wantedItems);
@@ -157,4 +159,4 @@ public class GroundItemsWithLinq : BaseSettingsPlugin<GroundItemsWithLinqSetting
         base.DrawSettings();
         RulesDisplay.DrawSettings();
     }
-}
+}
