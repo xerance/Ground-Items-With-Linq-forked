@@ -26,6 +26,7 @@ public class CustomItemData(
     public long LabelAddress { get; set; } = label.Address;
     public Element Label { get; set; } = label;
     public bool? IsWanted { get; set; }
+    public GroundRule MatchedRule { get; set; }
     public Vector2 Location { get; set; } = worldEntity.GridPosNum;
 
     public List<string> UniqueNameCandidates { get; set; }

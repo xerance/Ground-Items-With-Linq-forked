@@ -18,7 +18,7 @@ public class GroundItemsWithLinq : BaseSettingsPlugin<GroundItemsWithLinqSetting
     public readonly HashSet<CustomItemData> StoredCustomItems = [];
     public readonly Stopwatch Timer = Stopwatch.StartNew();
 
-    public List<ItemFilter> ItemFilters;
+    public List<LoadedRule> ItemFilters;
     public Element LargeMap;
     public Dictionary<string, List<string>> UniqueArtMapping = [];
 
@@ -137,13 +137,19 @@ public class GroundItemsWithLinq : BaseSettingsPlugin<GroundItemsWithLinqSetting
             if (item.WasDynamicallyUpdated)
             {
                 item.IsWanted = null;
+                item.MatchedRule = null;
                 item.WasDynamicallyUpdated = false;
             }
 
             item.UpdateDynamicCustomData();
 
             profilerIsInFilter?.Start();
-            item.IsWanted ??= ItemFilters?.Any(filter => filter.Matches(item)) ?? false;
+            if (item.IsWanted == null)
+            {
+                var match = ItemFilters?.FirstOrDefault(x => x.Filter.Matches(item));
+                item.MatchedRule = match?.Rule;
+                item.IsWanted = match != null;
+            }
             profilerIsInFilter?.Stop();
         }
 
@@ -159,4 +165,7 @@ public class GroundItemsWithLinq : BaseSettingsPlugin<GroundItemsWithLinqSetting
         base.DrawSettings();
         RulesDisplay.DrawSettings();
     }
-}
+}
+
+/// <summary>A rule paired with the filter it loaded, so a match can be traced back to its settings.</summary>
+public record LoadedRule(GroundRule Rule, ItemFilter Filter);
