@@ -83,7 +83,7 @@ public class RulesDisplay
                 if (ImGui.BeginDragDropSource())
                 {
                     ImGuiHelpers.SetDragDropPayload("RuleIndex", i);
-                    ImGui.Text(rule.Name);
+                    ImGui.TextUnformatted(rule.Name);
                     ImGui.EndDragDropSource();
                 }
                 else if (ImGui.IsItemHovered())
@@ -140,18 +140,17 @@ public class RulesDisplay
                 var textPos = ImGui.GetItemRectMin();
                 ImGui.SetCursorScreenPos(textPos);
 
+                // File names are user data and may contain '%', so never let them reach
+                // the printf-style Text/TextColored overloads.
                 if (!string.IsNullOrEmpty(directoryPart))
                 {
-                    ImGui.TextColored(
-                        new Vector4(0.4f, 0.7f, 1.0f, 1.0f), directoryPart + "/"
-                    );
+                    ImGui.PushStyleColor(ImGuiCol.Text, new Vector4(0.4f, 0.7f, 1.0f, 1.0f));
+                    ImGui.TextUnformatted(directoryPart + "/");
+                    ImGui.PopStyleColor();
                     ImGui.SameLine(0, 0);
-                    ImGui.Text(fileName);
                 }
-                else
-                {
-                    ImGui.Text(fileName);
-                }
+
+                ImGui.TextUnformatted(fileName);
 
                 ImGui.PopID();
 
@@ -161,11 +160,17 @@ public class RulesDisplay
                 ImGui.SetNextItemWidth(-1);
                 if (ImGui.InputText("", ref customLabel, 64)) rule.CustomLabel = customLabel;
 
+                // SetTooltip/Text are printf-style natively, so anything containing '%'
+                // must go through TextUnformatted or ImGui will read bogus varargs and crash.
                 if (ImGui.IsItemHovered())
-                    ImGui.SetTooltip(
+                {
+                    ImGui.BeginTooltip();
+                    ImGui.TextUnformatted(
                         "Text drawn on the ground label of items this rule matches.\n" +
                         "Leave empty to fall back to the item name.\n" +
                         "%N = item name, %U = resolved unique names, %V = estimated value, \\n = new line");
+                    ImGui.EndTooltip();
+                }
 
                 ImGui.PopID();
             }
