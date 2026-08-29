@@ -94,6 +94,28 @@ public class UniqueIdentificationSettings
 
     [Menu(null, "Use if you want to ignore what's in game memory and rely only on your custom/builtin file")]
     public ToggleNode IgnoreGameUniqueArtMapping { get; set; } = new(false);
+
+    [Menu(null, "Draw the real unique name on top of the item's label on the ground")]
+    public ToggleNode ShowRealUniqueNameOnGround { get; set; } = new(true);
+
+    [Menu(null, "Only draw the on-ground name for items that match one of your filters")]
+    public ToggleNode OnlyShowForFilterMatches { get; set; } = new(true);
+
+    [Menu(null, "Only draw the on-ground name when the estimated value is at or above the valuable threshold")]
+    public ToggleNode OnlyShowRealUniqueNameForValuableUniques { get; set; } = new(false);
+
+    [Menu(null, "Draw ??? over unidentified uniques whose art path is not in the mapping")]
+    public ToggleNode ShowWarningTextForUnknownUniques { get; set; } = new(false);
+
+    [Menu(null, "Hide the on-ground name when there is only one possible name")]
+    public ToggleNode HideSingleCandidateNames { get; set; } = new(false);
+
+    public RangeNode<float> UniqueLabelSize { get; set; } = new(0.8f, 0.1f, 1f);
+    public RangeNode<float> ValuableValueThreshold { get; set; } = new(10f, 0f, 1000f);
+    public ColorNode UniqueItemNameTextColor { get; set; } = new(Color.Black);
+    public ColorNode UniqueItemNameBackgroundColor { get; set; } = new(new Color(175, 96, 37));
+    public ColorNode ValuableUniqueItemNameTextColor { get; set; } = new(new Color(175, 96, 37));
+    public ColorNode ValuableUniqueItemNameBackgroundColor { get; set; } = new(Color.White);
 }
 
 public class GroundRule(string name, string location, bool enabled)
