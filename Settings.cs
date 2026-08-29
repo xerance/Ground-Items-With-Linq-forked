@@ -20,6 +20,7 @@ public class GroundItemsWithLinqSettings : ISettings
     public RangeNode<float> TextSize { get; set; } = new(1f, 1f, 20f);
 
     public UniqueIdentificationSettings UniqueIdentificationSettings { get; set; } = new();
+    public GroundNameOverlaySettings GroundNameOverlaySettings { get; set; } = new();
     public ToggleNode EnableTextDrawing { get; set; } = new(true);
     public ToggleNode IgnoreFullscreenPanels { get; set; } = new(false);
     public ToggleNode IgnoreRightPanels { get; set; } = new(false);
@@ -94,28 +95,36 @@ public class UniqueIdentificationSettings
 
     [Menu(null, "Use if you want to ignore what's in game memory and rely only on your custom/builtin file")]
     public ToggleNode IgnoreGameUniqueArtMapping { get; set; } = new(false);
+}
 
-    [Menu(null, "Draw the real unique name on top of the item's label on the ground")]
-    public ToggleNode ShowRealUniqueNameOnGround { get; set; } = new(true);
+[Submenu]
+public class GroundNameOverlaySettings
+{
+    [Menu(null, "Draw a name on top of the item's label on the ground")]
+    public ToggleNode Enable { get; set; } = new(true);
 
-    [Menu(null, "Only draw the on-ground name for items that match one of your filters")]
-    public ToggleNode OnlyShowForFilterMatches { get; set; } = new(true);
+    [Menu(null, "Draw for every item that matches one of your filters, using the rule's custom label if it has one")]
+    public ToggleNode DrawForAllFilterMatches { get; set; } = new(true);
 
-    [Menu(null, "Only draw the on-ground name when the estimated value is at or above the valuable threshold")]
-    public ToggleNode OnlyShowRealUniqueNameForValuableUniques { get; set; } = new(false);
+    [Menu(null, "Draw the resolved real name over unidentified uniques, even if no filter matched them")]
+    public ToggleNode DrawForUnidentifiedUniques { get; set; } = new(true);
 
     [Menu(null, "Draw ??? over unidentified uniques whose art path is not in the mapping")]
     public ToggleNode ShowWarningTextForUnknownUniques { get; set; } = new(false);
 
-    [Menu(null, "Hide the on-ground name when there is only one possible name")]
+    [Menu(null, "Skip uniques that resolve to a single name (the art already gives it away)")]
     public ToggleNode HideSingleCandidateNames { get; set; } = new(false);
 
-    public RangeNode<float> UniqueLabelSize { get; set; } = new(0.8f, 0.1f, 1f);
+    [Menu(null, "Estimated value at or above which an item is drawn with the valuable colors")]
     public RangeNode<float> ValuableValueThreshold { get; set; } = new(10f, 0f, 1000f);
-    public ColorNode UniqueItemNameTextColor { get; set; } = new(Color.Black);
-    public ColorNode UniqueItemNameBackgroundColor { get; set; } = new(new Color(175, 96, 37));
-    public ColorNode ValuableUniqueItemNameTextColor { get; set; } = new(new Color(175, 96, 37));
-    public ColorNode ValuableUniqueItemNameBackgroundColor { get; set; } = new(Color.White);
+
+    [Menu(null, "Fraction of the label width the text is allowed to fill")]
+    public RangeNode<float> LabelSize { get; set; } = new(0.8f, 0.1f, 1f);
+
+    public ColorNode NameTextColor { get; set; } = new(Color.Black);
+    public ColorNode NameBackgroundColor { get; set; } = new(new Color(175, 96, 37));
+    public ColorNode ValuableNameTextColor { get; set; } = new(new Color(175, 96, 37));
+    public ColorNode ValuableNameBackgroundColor { get; set; } = new(Color.White);
 }
 
 public class GroundRule(string name, string location, bool enabled)
@@ -123,6 +132,12 @@ public class GroundRule(string name, string location, bool enabled)
     public string Name { get; set; } = name;
     public string Location { get; set; } = location;
     public bool Enabled { get; set; } = enabled;
+
+    /// <summary>
+    ///     Optional text drawn on the ground label of items this rule matches.
+    ///     Supports %N (item name), %U (resolved unique names) and %V (estimated value).
+    /// </summary>
+    public string CustomLabel { get; set; } = "";
 }
 
 public static class SortModes

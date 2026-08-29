@@ -28,6 +28,7 @@ public class RulesDisplay
             foreach (var item in Main.StoredCustomItems)
             {
                 item.IsWanted = null;
+                item.MatchedRule = null;
                 item.WasDynamicallyUpdated = false;
             }
 
@@ -56,11 +57,12 @@ public class RulesDisplay
             "Rule Files\nFiles are loaded in order, so easier to process (common item queries hit more often that others) rule sets should be loaded first.");
         ImGui.Separator();
 
-        if (ImGui.BeginTable("RulesTable", 3, ImGuiTableFlags.Borders | ImGuiTableFlags.Resizable))
+        if (ImGui.BeginTable("RulesTable", 4, ImGuiTableFlags.Borders | ImGuiTableFlags.Resizable))
         {
             ImGui.TableSetupColumn("Drag", ImGuiTableColumnFlags.WidthFixed, 40);
             ImGui.TableSetupColumn("Toggle", ImGuiTableColumnFlags.WidthFixed, 50);
             ImGui.TableSetupColumn("File", ImGuiTableColumnFlags.None);
+            ImGui.TableSetupColumn("Ground Label", ImGuiTableColumnFlags.WidthFixed, 180);
             ImGui.TableHeadersRow();
 
             var rules = Main.Settings.GroundRules;
@@ -150,6 +152,20 @@ public class RulesDisplay
                 {
                     ImGui.Text(fileName);
                 }
+
+                ImGui.PopID();
+
+                ImGui.TableSetColumnIndex(3);
+                ImGui.PushID($"label_{rule.Location}");
+                var customLabel = rule.CustomLabel ?? "";
+                ImGui.SetNextItemWidth(-1);
+                if (ImGui.InputText("", ref customLabel, 64)) rule.CustomLabel = customLabel;
+
+                if (ImGui.IsItemHovered())
+                    ImGui.SetTooltip(
+                        "Text drawn on the ground label of items this rule matches.\n" +
+                        "Leave empty to fall back to the item name.\n" +
+                        "%N = item name, %U = resolved unique names, %V = estimated value, \\n = new line");
 
                 ImGui.PopID();
             }
@@ -248,7 +264,7 @@ public class RulesDisplay
                 .Select(rule =>
                 {
                     var rulePath = Path.Combine(pickitConfigFileDirectory, rule.Location);
-                    return LoadItemFilterWithRetry(rulePath);
+                    return new LoadedRule(rule, LoadItemFilterWithRetry(rulePath));
                 })
                 .ToList();
 
