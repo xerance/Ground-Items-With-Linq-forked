@@ -54,27 +54,36 @@ public static class GroundNameOverlay
             if (tooltipRect.Intersects(box) || leftPanelRect.Intersects(box) || rightPanelRect.Intersects(box))
                 continue;
 
-            Color textColor, backgroundColor;
-            if (isWarning)
-            {
-                textColor = Color.Red;
-                backgroundColor = Color.Blue;
-            }
-            else if (item.EstimatedValue >= settings.ValuableValueThreshold.Value)
-            {
-                textColor = settings.ValuableNameTextColor;
-                backgroundColor = settings.ValuableNameBackgroundColor;
-            }
-            else
-            {
-                textColor = settings.NameTextColor;
-                backgroundColor = settings.NameBackgroundColor;
-            }
+            var (textColor, backgroundColor) = ResolveColors(item, settings, isWarning);
 
             DrawOnItemLabel(drawList, box, BestFittingLayout(box, text), backgroundColor, textColor);
         }
 
         ImGui.End();
+    }
+
+    /// <summary>
+    ///     Picks the colours for an item, in precedence order: the unknown-unique warning,
+    ///     then the matched rule's own colours, then the valuable colours, then the defaults.
+    /// </summary>
+    private static (Color Text, Color Background) ResolveColors(CustomItemData item,
+        GroundNameOverlaySettings settings, bool isWarning)
+    {
+        if (isWarning) return (Color.Red, Color.Blue);
+
+        var rule = item.MatchedRule;
+        if (item.IsWanted == true && rule is { UseCustomColors: true })
+            return (ToColor(rule.TextColor), ToColor(rule.BackgroundColor));
+
+        if (item.EstimatedValue >= settings.ValuableValueThreshold.Value)
+            return (settings.ValuableNameTextColor, settings.ValuableNameBackgroundColor);
+
+        return (settings.NameTextColor, settings.NameBackgroundColor);
+    }
+
+    private static Color ToColor(System.Numerics.Vector4 v)
+    {
+        return new Color(v.X, v.Y, v.Z, v.W);
     }
 
     /// <summary>
@@ -142,10 +151,17 @@ public static class GroundNameOverlay
         var textSize = Main.Graphics.MeasureText(text);
         if (textSize.X <= 0 || textSize.Y <= 0) return 0;
 
-        return Math.Min(
-            box.Width * Main.Settings.GroundNameOverlaySettings.LabelSize.Value / textSize.X,
+        var settings = Main.Settings.GroundNameOverlaySettings;
+
+        // Fit the text to the label box, then bias it by the user's scale. Without the
+        // fit the text would overflow small labels; without the bias it could never be
+        // made deliberately smaller or allowed to spill past the label edges.
+        var fitted = Math.Min(
+            box.Width * settings.LabelSize.Value / textSize.X,
             (box.Height - 2) / textSize.Y
         );
+
+        return fitted * settings.TextScale.Value;
     }
 
     private static void DrawOnItemLabel(ImDrawListPtr drawList, RectangleF box, (string Text, float Scale) layout,

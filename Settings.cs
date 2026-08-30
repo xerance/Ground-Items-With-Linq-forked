@@ -121,6 +121,9 @@ public class GroundNameOverlaySettings
     [Menu(null, "Fraction of the label width the text is allowed to fill")]
     public RangeNode<float> LabelSize { get; set; } = new(0.8f, 0.1f, 1f);
 
+    [Menu(null, "Multiplies the fitted text size. 1 = fit the label exactly, higher spills past its edges")]
+    public RangeNode<float> TextScale { get; set; } = new(1f, 0.1f, 5f);
+
     public ColorNode NameTextColor { get; set; } = new(Color.Black);
     public ColorNode NameBackgroundColor { get; set; } = new(new Color(175, 96, 37));
     public ColorNode ValuableNameTextColor { get; set; } = new(new Color(175, 96, 37));
@@ -138,6 +141,17 @@ public class GroundRule(string name, string location, bool enabled)
     ///     Supports %N (item name), %U (resolved unique names) and %V (estimated value).
     /// </summary>
     public string CustomLabel { get; set; } = "";
+
+    /// <summary>Draw matches of this rule in its own colours instead of the global ones.</summary>
+    public bool UseCustomColors { get; set; }
+
+    /// <summary>
+    ///     RGBA in the 0-1 range. Stored as a Vector4 so it round-trips through the settings
+    ///     JSON without a converter and feeds ImGui's colour picker directly.
+    /// </summary>
+    public System.Numerics.Vector4 TextColor { get; set; } = new(0f, 0f, 0f, 1f);
+
+    public System.Numerics.Vector4 BackgroundColor { get; set; } = new(0.686f, 0.376f, 0.145f, 1f);
 }
 
 public static class SortModes
