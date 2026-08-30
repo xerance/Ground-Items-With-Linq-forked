@@ -57,12 +57,13 @@ public class RulesDisplay
             "Rule Files\nFiles are loaded in order, so easier to process (common item queries hit more often that others) rule sets should be loaded first.");
         ImGui.Separator();
 
-        if (ImGui.BeginTable("RulesTable", 4, ImGuiTableFlags.Borders | ImGuiTableFlags.Resizable))
+        if (ImGui.BeginTable("RulesTable", 5, ImGuiTableFlags.Borders | ImGuiTableFlags.Resizable))
         {
             ImGui.TableSetupColumn("Drag", ImGuiTableColumnFlags.WidthFixed, 40);
             ImGui.TableSetupColumn("Toggle", ImGuiTableColumnFlags.WidthFixed, 50);
             ImGui.TableSetupColumn("File", ImGuiTableColumnFlags.None);
             ImGui.TableSetupColumn("Ground Label", ImGuiTableColumnFlags.WidthFixed, 180);
+            ImGui.TableSetupColumn("Colors", ImGuiTableColumnFlags.WidthFixed, 90);
             ImGui.TableHeadersRow();
 
             var rules = Main.Settings.GroundRules;
@@ -170,6 +171,35 @@ public class RulesDisplay
                         "Leave empty to fall back to the item name.\n" +
                         "%N = item name, %U = resolved unique names, %V = estimated value, \\n = new line");
                     ImGui.EndTooltip();
+                }
+
+                ImGui.PopID();
+
+                ImGui.TableSetColumnIndex(4);
+                ImGui.PushID($"colors_{rule.Location}");
+                var useCustomColors = rule.UseCustomColors;
+                if (ImGui.Checkbox("", ref useCustomColors)) rule.UseCustomColors = useCustomColors;
+
+                if (ImGui.IsItemHovered())
+                {
+                    ImGui.BeginTooltip();
+                    ImGui.TextUnformatted("Draw matches of this rule in its own colours.\nText swatch first, then background.");
+                    ImGui.EndTooltip();
+                }
+
+                if (useCustomColors)
+                {
+                    const ImGuiColorEditFlags swatchFlags =
+                        ImGuiColorEditFlags.NoInputs | ImGuiColorEditFlags.NoLabel | ImGuiColorEditFlags.AlphaPreview;
+
+                    var ruleTextColor = rule.TextColor;
+                    ImGui.SameLine();
+                    if (ImGui.ColorEdit4("text", ref ruleTextColor, swatchFlags)) rule.TextColor = ruleTextColor;
+
+                    var ruleBackgroundColor = rule.BackgroundColor;
+                    ImGui.SameLine();
+                    if (ImGui.ColorEdit4("background", ref ruleBackgroundColor, swatchFlags))
+                        rule.BackgroundColor = ruleBackgroundColor;
                 }
 
                 ImGui.PopID();
