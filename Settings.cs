@@ -125,6 +125,12 @@ public class GroundNameOverlaySettings
     [Menu(null, "Multiplies the fitted text size. 1 = fit the label exactly, higher spills past its edges")]
     public RangeNode<float> TextScale { get; set; } = new(1f, 0.1f, 5f);
 
+    [Menu(null, "Stretch the background across the whole ground label instead of hugging the text")]
+    public ToggleNode StretchBackgroundToLabel { get; set; } = new(false);
+
+    [Menu(null, "Thickness of the frame drawn around a rule's matches")]
+    public RangeNode<int> RuleFrameThickness { get; set; } = new(2, 1, 10);
+
     public ColorNode NameTextColor { get; set; } = new(Color.Black);
     public ColorNode NameBackgroundColor { get; set; } = new(new Color(175, 96, 37));
     public ColorNode ValuableNameTextColor { get; set; } = new(new Color(175, 96, 37));
@@ -187,6 +193,11 @@ public class GroundRule(string name, string location, bool enabled)
     public System.Numerics.Vector4 TextColor { get; set; } = new(0f, 0f, 0f, 1f);
 
     public System.Numerics.Vector4 BackgroundColor { get; set; } = new(0.686f, 0.376f, 0.145f, 1f);
+
+    /// <summary>Draw a frame around the ground label of items this rule matches.</summary>
+    public bool DrawFrame { get; set; }
+
+    public System.Numerics.Vector4 FrameColor { get; set; } = new(0.96f, 0.87f, 0.70f, 1f);
 }
 
 public static class SortModes

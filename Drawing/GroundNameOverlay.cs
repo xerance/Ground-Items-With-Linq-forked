@@ -61,14 +61,11 @@ public static class GroundNameOverlay
 
             DrawOnItemLabel(drawList, box, BestFittingLayout(box, text), backgroundColor, textColor);
 
+            // The highlight frame wins over a rule frame, matching the colour precedence.
             if (isHighlighted && highlight.DrawLabelFrame)
-            {
-                var thickness = highlight.FrameThickness.Value;
-                drawList.AddRect(
-                    new Vector2N(box.Left - thickness / 2f, box.Top - thickness / 2f),
-                    new Vector2N(box.Right + thickness / 2f, box.Bottom + thickness / 2f),
-                    highlight.FrameColor.Value.ToImgui(), 0f, ImDrawFlags.None, thickness);
-            }
+                DrawFrame(drawList, box, highlight.FrameThickness.Value, highlight.FrameColor);
+            else if (item.IsWanted == true && item.MatchedRule is { DrawFrame: true } framedRule)
+                DrawFrame(drawList, box, settings.RuleFrameThickness.Value, ToColor(framedRule.FrameColor));
         }
 
         ImGui.End();
@@ -189,14 +186,33 @@ public static class GroundNameOverlay
         return fitted * settings.TextScale.Value;
     }
 
+    private static void DrawFrame(ImDrawListPtr drawList, RectangleF box, int thickness, Color color)
+    {
+        // Inflate by half the thickness so the stroke sits outside the label rather than
+        // eating into the item art it is meant to be framing.
+        var offset = thickness / 2f;
+        drawList.AddRect(
+            new Vector2N(box.Left - offset, box.Top - offset),
+            new Vector2N(box.Right + offset, box.Bottom + offset),
+            color.ToImgui(), 0f, ImDrawFlags.None, thickness);
+    }
+
     private static void DrawOnItemLabel(ImDrawListPtr drawList, RectangleF box, (string Text, float Scale) layout,
         Color backgroundColor, Color textColor)
     {
         ImGui.SetWindowFontScale(layout.Scale);
         var textSize = ImGui.CalcTextSize(layout.Text);
         var textPosition = box.Center.ToVector2Num() - textSize / 2;
-        var rectPosition = new Vector2N(textPosition.X, box.Top + 1);
-        drawList.AddRectFilled(rectPosition, rectPosition + new Vector2N(textSize.X, box.Height - 2),
+
+        // Hugging the text keeps the item art visible either side; stretching covers the whole
+        // label, which reads as a solid block of colour in a busy loot pile.
+        var stretch = Main.Settings.GroundNameOverlaySettings.StretchBackgroundToLabel;
+        var backgroundLeft = stretch ? box.Left : textPosition.X;
+        var backgroundRight = stretch ? box.Right : textPosition.X + textSize.X;
+
+        drawList.AddRectFilled(
+            new Vector2N(backgroundLeft, box.Top + 1),
+            new Vector2N(backgroundRight, box.Bottom - 1),
             backgroundColor.ToImgui());
         drawList.AddText(textPosition, textColor.ToImgui(), layout.Text);
         ImGui.SetWindowFontScale(1);
