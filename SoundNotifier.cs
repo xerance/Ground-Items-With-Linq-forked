@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using ExileCore;
 using static Ground_Items_With_Linq.GroundItemsWithLinq;
 
@@ -35,6 +36,8 @@ public static class SoundNotifier
 
     public static void ReloadSoundList()
     {
+        ExtractDefaultSound();
+
         try
         {
             _soundFiles = Directory.EnumerateFiles(Main.ConfigDirectory, "*.wav")
@@ -46,6 +49,42 @@ public static class SoundNotifier
         {
             DebugWindow.LogError($"[SoundNotifier] Unable to read sound files: {ex.Message}");
             _soundFiles = new Dictionary<string, string>(StringComparer.InvariantCultureIgnoreCase);
+        }
+    }
+
+    /// <summary>
+    ///     Writes the bundled default.wav into the config directory on first run, so the feature
+    ///     works out of the box. Never overwrites: the file is the user's once it exists, and
+    ///     replacing their chosen alert on every reload would be obnoxious.
+    /// </summary>
+    private static void ExtractDefaultSound()
+    {
+        try
+        {
+            var target = Path.Join(Main.ConfigDirectory, $"{DefaultSoundFile}.wav");
+            if (File.Exists(target)) return;
+
+            var assembly = Assembly.GetExecutingAssembly();
+            var resourceName = assembly
+                .GetManifestResourceNames()
+                .FirstOrDefault(x => x.EndsWith($"{DefaultSoundFile}.wav", StringComparison.OrdinalIgnoreCase));
+
+            if (resourceName == null)
+            {
+                DebugWindow.LogError($"[SoundNotifier] No embedded {DefaultSoundFile}.wav to extract.");
+                return;
+            }
+
+            using var stream = assembly.GetManifestResourceStream(resourceName);
+            if (stream == null) return;
+
+            using var file = File.Create(target);
+            stream.CopyTo(file);
+            DebugWindow.LogMsg($"[SoundNotifier] Wrote the default alert sound to {target}");
+        }
+        catch (Exception ex)
+        {
+            DebugWindow.LogError($"[SoundNotifier] Unable to write the default sound: {ex.Message}");
         }
     }
 

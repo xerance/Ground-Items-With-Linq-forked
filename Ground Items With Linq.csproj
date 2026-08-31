@@ -21,9 +21,13 @@
   </PropertyGroup>
   <ItemGroup>
     <None Remove="uniqueArtMapping.default.json" />
+    <None Remove="default.wav" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="uniqueArtMapping.default.json" />
+    <!-- LogicalName strips the root namespace prefix MSBuild would otherwise prepend, so these
+         resolve by their bare file name. The loaders also match by suffix, so either works. -->
+    <EmbeddedResource Include="uniqueArtMapping.default.json" LogicalName="uniqueArtMapping.default.json" />
+    <EmbeddedResource Include="default.wav" LogicalName="default.wav" />
   </ItemGroup>
   <ItemGroup>
     <!--Rather than replacing this with absolute or relative paths, you should create an environment variable for wherever your HUD folder is-->
