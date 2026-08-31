@@ -55,6 +55,7 @@ public class GroundItemsWithLinq : BaseSettingsPlugin<GroundItemsWithLinqSetting
         // player happens to zone. Falls back to the embedded JSON when game files are not
         // ready yet, so it is safe this early.
         EnsureUniqueArtMapping();
+        SoundNotifier.ReloadSoundList();
 
         RulesDisplay.LoadAndApplyRules();
         return true;
@@ -88,12 +89,19 @@ public class GroundItemsWithLinq : BaseSettingsPlugin<GroundItemsWithLinqSetting
             Settings.UniqueIdentificationSettings.IgnoreGameUniqueArtMapping
         );
         StoredCustomItems.Clear();
+
+        // Leaving and returning should alert again; standing next to an item should not.
+        SoundNotifier.Reset();
     }
 
     public override Job Tick()
     {
         LargeMap = GameController.IngameState.IngameUi.Map.LargeMap;
         UpdateStoredItems(false);
+
+        // Driven from Tick, not Render, so alerts still fire while a panel is covering the screen.
+        SoundNotifier.Process(StoredCustomItems);
+
         return null;
     }
 
