@@ -50,8 +50,31 @@ public class GroundItemsWithLinq : BaseSettingsPlugin<GroundItemsWithLinqSetting
             );
         };
 
+        // Load up front rather than waiting for the first AreaChange: the settings UI reads
+        // this mapping, and without it every highlight name reports "no art match" until the
+        // player happens to zone. Falls back to the embedded JSON when game files are not
+        // ready yet, so it is safe this early.
+        EnsureUniqueArtMapping();
+
         RulesDisplay.LoadAndApplyRules();
         return true;
+    }
+
+    /// <summary>Populates <see cref="UniqueArtMapping" /> if it is empty. Safe to call at any time.</summary>
+    public void EnsureUniqueArtMapping(bool force = false)
+    {
+        if (UniqueArtMapping.Count != 0 && !force) return;
+
+        try
+        {
+            UniqueArtMapping = UniqueArtManager.LoadUniqueArtMapping(
+                Settings.UniqueIdentificationSettings.IgnoreGameUniqueArtMapping
+            );
+        }
+        catch (System.Exception ex)
+        {
+            LogError($"Unable to load the unique art mapping: {ex.Message}");
+        }
     }
 
     public override void OnLoad()
