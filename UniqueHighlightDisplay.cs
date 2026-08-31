@@ -40,7 +40,12 @@ public static class UniqueHighlightDisplay
         var settings = Main.Settings.UniqueHighlightSettings;
         var names = settings.Names;
 
-        ImGui.TextUnformatted($"Unique names ({Main.UniqueArtMapping.Count} art paths loaded)");
+        // The mapping is otherwise only populated on AreaChange, so opening these settings
+        // before the first zone would show an empty dictionary and fail every lookup.
+        Main.EnsureUniqueArtMapping();
+
+        var artPathCount = Main.UniqueArtMapping.Count;
+        ImGui.TextUnformatted($"Unique names ({artPathCount} art paths loaded)");
         if (ImGui.IsItemHovered())
         {
             ImGui.BeginTooltip();
@@ -49,6 +54,12 @@ public static class UniqueHighlightDisplay
                 "If this reads 0 art paths the mapping failed to load and nothing will match.");
             ImGui.EndTooltip();
         }
+
+        ImGui.SameLine();
+        if (ImGui.Button("Reload art mapping")) Main.EnsureUniqueArtMapping(true);
+
+        if (artPathCount == 0)
+            ImGui.TextUnformatted("Art mapping is empty - names cannot resolve. Try Reload, or enter an area.");
 
         ImGui.Indent();
 
