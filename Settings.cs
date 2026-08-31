@@ -21,6 +21,7 @@ public class GroundItemsWithLinqSettings : ISettings
 
     public UniqueIdentificationSettings UniqueIdentificationSettings { get; set; } = new();
     public GroundNameOverlaySettings GroundNameOverlaySettings { get; set; } = new();
+    public UniqueHighlightSettings UniqueHighlightSettings { get; set; } = new();
     public ToggleNode EnableTextDrawing { get; set; } = new(true);
     public ToggleNode IgnoreFullscreenPanels { get; set; } = new(false);
     public ToggleNode IgnoreRightPanels { get; set; } = new(false);
@@ -128,6 +129,40 @@ public class GroundNameOverlaySettings
     public ColorNode NameBackgroundColor { get; set; } = new(new Color(175, 96, 37));
     public ColorNode ValuableNameTextColor { get; set; } = new(new Color(175, 96, 37));
     public ColorNode ValuableNameBackgroundColor { get; set; } = new(Color.White);
+}
+
+[Submenu]
+public class UniqueHighlightSettings
+{
+    public UniqueHighlightSettings()
+    {
+        // Rendered inside this submenu rather than appended to the bottom of the
+        // settings window, so the name rows sit with the options that govern them.
+        NameList = new CustomNode { DrawDelegate = UniqueHighlightDisplay.Draw };
+    }
+
+    [Menu(null, "Highlight named uniques on the ground even when no filter matches them")]
+    public ToggleNode Enable { get; set; } = new(true);
+
+    [Menu(null, "Require the whole name to match. Off, an entry matches any name containing it")]
+    public ToggleNode ExactMatch { get; set; } = new(false);
+
+    [Menu(null, "Also draw a frame around the item's ground label")]
+    public ToggleNode DrawLabelFrame { get; set; } = new(true);
+
+    public RangeNode<int> FrameThickness { get; set; } = new(2, 1, 10);
+    public ColorNode FrameColor { get; set; } = new(Color.Wheat);
+    public ColorNode TextColor { get; set; } = new(Color.Black);
+    public ColorNode BackgroundColor { get; set; } = new(new Color(255, 215, 0));
+
+    /// <summary>
+    ///     Bare unique names, e.g. "Timeclasp" - never the base type. Matched against the
+    ///     art-derived candidates, which is the only identity an unidentified unique has.
+    /// </summary>
+    public List<string> Names { get; set; } = [];
+
+    [JsonIgnore]
+    public CustomNode NameList { get; set; }
 }
 
 public class GroundRule(string name, string location, bool enabled)
