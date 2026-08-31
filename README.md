@@ -26,7 +26,8 @@ Source of two features ported here:
   draw list, and picking the text layout that best fits the item's label box — is taken
   from its `ShowRealUniqueNameOnGround`. Adapted to trigger on filter matches rather
   than a poe.ninja price threshold, since this plugin has no price feed.
-- **Sound notifications.** The design in `SoundNotifier` — per-item wav files resolved
+- **Sound notifications.** The bundled `default.wav` is its file, copied unchanged. The
+  design in `SoundNotifier` — per-item wav files resolved
   by name from the config directory, with a played-tracker so an item alerts once
   rather than every frame, cleared on area change — follows its implementation.
 
