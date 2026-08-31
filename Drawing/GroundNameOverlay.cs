@@ -44,9 +44,12 @@ public static class GroundNameOverlay
             ? ingameUi.OpenRightPanel.GetClientRectCache
             : RectangleF.Empty;
 
+        var highlight = Main.Settings.UniqueHighlightSettings;
+
         foreach (var item in items)
         {
-            var (text, isWarning) = ResolveText(item, settings);
+            var isHighlighted = UniqueHighlightDisplay.Matches(item);
+            var (text, isWarning) = ResolveText(item, settings, isHighlighted);
             if (text == null) continue;
 
             var box = item.Label?.GetClientRect() ?? RectangleF.Empty;
@@ -54,9 +57,18 @@ public static class GroundNameOverlay
             if (tooltipRect.Intersects(box) || leftPanelRect.Intersects(box) || rightPanelRect.Intersects(box))
                 continue;
 
-            var (textColor, backgroundColor) = ResolveColors(item, settings, isWarning);
+            var (textColor, backgroundColor) = ResolveColors(item, settings, isWarning, isHighlighted);
 
             DrawOnItemLabel(drawList, box, BestFittingLayout(box, text), backgroundColor, textColor);
+
+            if (isHighlighted && highlight.DrawLabelFrame)
+            {
+                var thickness = highlight.FrameThickness.Value;
+                drawList.AddRect(
+                    new Vector2N(box.Left - thickness / 2f, box.Top - thickness / 2f),
+                    new Vector2N(box.Right + thickness / 2f, box.Bottom + thickness / 2f),
+                    highlight.FrameColor.Value.ToImgui(), 0f, ImDrawFlags.None, thickness);
+            }
         }
 
         ImGui.End();
@@ -64,12 +76,20 @@ public static class GroundNameOverlay
 
     /// <summary>
     ///     Picks the colours for an item, in precedence order: the unknown-unique warning,
-    ///     then the matched rule's own colours, then the valuable colours, then the defaults.
+    ///     the highlight list, the matched rule's own colours, the valuable colours, the defaults.
     /// </summary>
     private static (Color Text, Color Background) ResolveColors(CustomItemData item,
-        GroundNameOverlaySettings settings, bool isWarning)
+        GroundNameOverlaySettings settings, bool isWarning, bool isHighlighted)
     {
         if (isWarning) return (Color.Red, Color.Blue);
+
+        // A name you typed by hand is the most specific statement of intent there is,
+        // so it outranks both the matched rule's colours and the valuable colours.
+        if (isHighlighted)
+        {
+            var highlight = Main.Settings.UniqueHighlightSettings;
+            return (highlight.TextColor, highlight.BackgroundColor);
+        }
 
         var rule = item.MatchedRule;
         if (item.IsWanted == true && rule is { UseCustomColors: true })
@@ -91,9 +111,14 @@ public static class GroundNameOverlay
     ///     the matched rule's custom label, then resolved unique names, then the item name.
     ///     Returns null when the item should not be drawn at all.
     /// </summary>
-    private static (string Text, bool IsWarning) ResolveText(CustomItemData item, GroundNameOverlaySettings settings)
+    private static (string Text, bool IsWarning) ResolveText(CustomItemData item, GroundNameOverlaySettings settings,
+        bool isHighlighted)
     {
         var matched = item.IsWanted == true;
+
+        // A highlighted unique draws whether or not a filter wanted it - the whole point
+        // of the list is to catch things your filters do not cover.
+        if (isHighlighted) return (JoinCandidates(item), false);
 
         if (matched && settings.DrawForAllFilterMatches)
         {
