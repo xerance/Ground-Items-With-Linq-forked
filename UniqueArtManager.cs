@@ -41,10 +41,26 @@ public class UniqueArtManager()
     {
         Dictionary<string, List<string>> mapping = null;
 
-        if (!ignoreGameMapping &&
-            Main.GameController.Files.UniqueItemDescriptions.EntriesList.Count != 0 &&
-            Main.GameController.Files.ItemVisualIdentities.EntriesList.Count != 0)
-            mapping = GetGameFileUniqueArtMapping();
+        if (!ignoreGameMapping)
+            try
+            {
+                var files = Main.GameController.Files;
+
+                // Previously this bailed out whenever the lists were empty, which is exactly the
+                // state before the first area is entered. Load them instead, the way the rebuild
+                // button already does, so the mapping is available from plugin start.
+                if (files.UniqueItemDescriptions.EntriesList.Count == 0 ||
+                    files.ItemVisualIdentities.EntriesList.Count == 0)
+                    files.LoadFiles();
+
+                if (files.UniqueItemDescriptions.EntriesList.Count != 0 &&
+                    files.ItemVisualIdentities.EntriesList.Count != 0)
+                    mapping = GetGameFileUniqueArtMapping();
+            }
+            catch (Exception ex)
+            {
+                LogError($"Unable to read the art mapping from game files, falling back: {ex.Message}");
+            }
 
         var customFilePath = Path.Join(Main.DirectoryFullName, CustomUniqueArtMappingPath);
 
@@ -69,13 +85,28 @@ public class UniqueArtManager()
     {
         try
         {
-            using var stream = Assembly
-                .GetExecutingAssembly()
-                .GetManifestResourceStream(DefaultUniqueArtMappingPath);
+            // MSBuild prefixes embedded resources with the root namespace, so the resource is
+            // really "Ground_Items_With_Linq.uniqueArtMapping.default.json". Asking for the bare
+            // file name returns null, which silently disabled this fallback entirely. Resolve
+            // by suffix so a namespace or file rename cannot break it again.
+            var assembly = Assembly.GetExecutingAssembly();
+            var resourceName = assembly
+                .GetManifestResourceNames()
+                .FirstOrDefault(x => x.EndsWith(DefaultUniqueArtMappingPath, StringComparison.OrdinalIgnoreCase));
+
+            if (resourceName == null)
+            {
+                LogError(
+                    $"No embedded resource ending in {DefaultUniqueArtMappingPath}. " +
+                    $"Available: {string.Join(", ", assembly.GetManifestResourceNames())}");
+                return null;
+            }
+
+            using var stream = assembly.GetManifestResourceStream(resourceName);
 
             if (stream == null)
             {
-                if (Main.Settings.Debug) LogMessage($"Embedded stream {DefaultUniqueArtMappingPath} is missing");
+                LogError($"Embedded stream {resourceName} could not be opened");
                 return null;
             }
 
