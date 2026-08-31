@@ -57,7 +57,7 @@ public class RulesDisplay
             "Rule Files\nFiles are loaded in order, so easier to process (common item queries hit more often that others) rule sets should be loaded first.");
         ImGui.Separator();
 
-        if (ImGui.BeginTable("RulesTable", 6, ImGuiTableFlags.Borders | ImGuiTableFlags.Resizable))
+        if (ImGui.BeginTable("RulesTable", 7, ImGuiTableFlags.Borders | ImGuiTableFlags.Resizable))
         {
             ImGui.TableSetupColumn("Drag", ImGuiTableColumnFlags.WidthFixed, 40);
             ImGui.TableSetupColumn("Toggle", ImGuiTableColumnFlags.WidthFixed, 50);
@@ -65,6 +65,7 @@ public class RulesDisplay
             ImGui.TableSetupColumn("Ground Label", ImGuiTableColumnFlags.WidthFixed, 180);
             ImGui.TableSetupColumn("Colors", ImGuiTableColumnFlags.WidthFixed, 90);
             ImGui.TableSetupColumn("Frame", ImGuiTableColumnFlags.WidthFixed, 70);
+            ImGui.TableSetupColumn("Sound", ImGuiTableColumnFlags.WidthFixed, 50);
             ImGui.TableHeadersRow();
 
             var rules = Main.Settings.GroundRules;
@@ -227,6 +228,23 @@ public class RulesDisplay
                             ImGuiColorEditFlags.NoInputs | ImGuiColorEditFlags.NoLabel |
                             ImGuiColorEditFlags.AlphaPreview))
                         rule.FrameColor = ruleFrameColor;
+                }
+
+                ImGui.PopID();
+
+                ImGui.TableSetColumnIndex(6);
+                ImGui.PushID($"sound_{rule.Location}");
+                var playSound = rule.PlaySound;
+                if (ImGui.Checkbox("", ref playSound)) rule.PlaySound = playSound;
+
+                if (ImGui.IsItemHovered())
+                {
+                    ImGui.BeginTooltip();
+                    ImGui.TextUnformatted(
+                        "Play a sound the first time a match of this rule appears.\n" +
+                        $"Uses {Path.GetFileNameWithoutExtension(rule.Location)}.wav if present, else default.wav.\n" +
+                        "Needs Sound Notification Settings enabled.");
+                    ImGui.EndTooltip();
                 }
 
                 ImGui.PopID();

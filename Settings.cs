@@ -22,6 +22,7 @@ public class GroundItemsWithLinqSettings : ISettings
     public UniqueIdentificationSettings UniqueIdentificationSettings { get; set; } = new();
     public GroundNameOverlaySettings GroundNameOverlaySettings { get; set; } = new();
     public UniqueHighlightSettings UniqueHighlightSettings { get; set; } = new();
+    public SoundNotificationSettings SoundNotificationSettings { get; set; } = new();
     public ToggleNode EnableTextDrawing { get; set; } = new(true);
     public ToggleNode IgnoreFullscreenPanels { get; set; } = new(false);
     public ToggleNode IgnoreRightPanels { get; set; } = new(false);
@@ -171,6 +172,26 @@ public class UniqueHighlightSettings
     public CustomNode NameList { get; set; }
 }
 
+[Submenu]
+public class SoundNotificationSettings
+{
+    public SoundNotificationSettings()
+    {
+        Information = new CustomNode { DrawDelegate = SoundNotificationDisplay.Draw };
+    }
+
+    [Menu(null, "Play a sound the first time a wanted item appears on the ground")]
+    public ToggleNode Enable { get; set; } = new(false);
+
+    [Menu(null, "Play for uniques matched by the highlight name list")]
+    public ToggleNode PlayForHighlightedUniques { get; set; } = new(true);
+
+    public RangeNode<float> Volume { get; set; } = new(1f, 0f, 2f);
+
+    [JsonIgnore]
+    public CustomNode Information { get; set; }
+}
+
 public class GroundRule(string name, string location, bool enabled)
 {
     public string Name { get; set; } = name;
@@ -193,6 +214,9 @@ public class GroundRule(string name, string location, bool enabled)
     public System.Numerics.Vector4 TextColor { get; set; } = new(0f, 0f, 0f, 1f);
 
     public System.Numerics.Vector4 BackgroundColor { get; set; } = new(0.686f, 0.376f, 0.145f, 1f);
+
+    /// <summary>Play a sound the first time an item this rule matches appears on the ground.</summary>
+    public bool PlaySound { get; set; }
 
     /// <summary>Draw a frame around the ground label of items this rule matches.</summary>
     public bool DrawFrame { get; set; }
