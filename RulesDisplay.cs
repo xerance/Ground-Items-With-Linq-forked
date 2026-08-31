@@ -57,13 +57,14 @@ public class RulesDisplay
             "Rule Files\nFiles are loaded in order, so easier to process (common item queries hit more often that others) rule sets should be loaded first.");
         ImGui.Separator();
 
-        if (ImGui.BeginTable("RulesTable", 5, ImGuiTableFlags.Borders | ImGuiTableFlags.Resizable))
+        if (ImGui.BeginTable("RulesTable", 6, ImGuiTableFlags.Borders | ImGuiTableFlags.Resizable))
         {
             ImGui.TableSetupColumn("Drag", ImGuiTableColumnFlags.WidthFixed, 40);
             ImGui.TableSetupColumn("Toggle", ImGuiTableColumnFlags.WidthFixed, 50);
             ImGui.TableSetupColumn("File", ImGuiTableColumnFlags.None);
             ImGui.TableSetupColumn("Ground Label", ImGuiTableColumnFlags.WidthFixed, 180);
             ImGui.TableSetupColumn("Colors", ImGuiTableColumnFlags.WidthFixed, 90);
+            ImGui.TableSetupColumn("Frame", ImGuiTableColumnFlags.WidthFixed, 70);
             ImGui.TableHeadersRow();
 
             var rules = Main.Settings.GroundRules;
@@ -200,6 +201,32 @@ public class RulesDisplay
                     ImGui.SameLine();
                     if (ImGui.ColorEdit4("background", ref ruleBackgroundColor, swatchFlags))
                         rule.BackgroundColor = ruleBackgroundColor;
+                }
+
+                ImGui.PopID();
+
+                ImGui.TableSetColumnIndex(5);
+                ImGui.PushID($"frame_{rule.Location}");
+                var drawFrame = rule.DrawFrame;
+                if (ImGui.Checkbox("", ref drawFrame)) rule.DrawFrame = drawFrame;
+
+                if (ImGui.IsItemHovered())
+                {
+                    ImGui.BeginTooltip();
+                    ImGui.TextUnformatted(
+                        "Draw a frame around the ground label of this rule's matches.\n" +
+                        "Thickness is shared, under Ground Name Overlay settings.");
+                    ImGui.EndTooltip();
+                }
+
+                if (drawFrame)
+                {
+                    var ruleFrameColor = rule.FrameColor;
+                    ImGui.SameLine();
+                    if (ImGui.ColorEdit4("frame", ref ruleFrameColor,
+                            ImGuiColorEditFlags.NoInputs | ImGuiColorEditFlags.NoLabel |
+                            ImGuiColorEditFlags.AlphaPreview))
+                        rule.FrameColor = ruleFrameColor;
                 }
 
                 ImGui.PopID();
