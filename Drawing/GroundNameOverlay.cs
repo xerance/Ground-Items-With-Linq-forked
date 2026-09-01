@@ -49,15 +49,15 @@ public static class GroundNameOverlay
         foreach (var item in items)
         {
             var isHighlighted = UniqueHighlightDisplay.Matches(item);
-            var (text, isWarning) = ResolveText(item, settings, isHighlighted);
-            if (text == null) continue;
+            var text = ResolveText(item, settings, isHighlighted);
+            if (string.IsNullOrEmpty(text)) continue;
 
             var box = item.Label?.GetClientRect() ?? RectangleF.Empty;
             if (box.Width <= 0 || box.Height <= 2) continue;
             if (tooltipRect.Intersects(box) || leftPanelRect.Intersects(box) || rightPanelRect.Intersects(box))
                 continue;
 
-            var (textColor, backgroundColor) = ResolveColors(item, settings, isWarning, isHighlighted);
+            var (textColor, backgroundColor) = ResolveColors(item, settings, isHighlighted);
 
             DrawOnItemLabel(drawList, box, BestFittingLayout(box, text), backgroundColor, textColor);
 
@@ -72,14 +72,12 @@ public static class GroundNameOverlay
     }
 
     /// <summary>
-    ///     Picks the colours for an item, in precedence order: the unknown-unique warning,
-    ///     the highlight list, the matched rule's own colours, the valuable colours, the defaults.
+    ///     Picks the colours for an item, in precedence order: the highlight list,
+    ///     the matched rule's own colours, the valuable colours, the defaults.
     /// </summary>
     private static (Color Text, Color Background) ResolveColors(CustomItemData item,
-        GroundNameOverlaySettings settings, bool isWarning, bool isHighlighted)
+        GroundNameOverlaySettings settings, bool isHighlighted)
     {
-        if (isWarning) return (Color.Red, Color.Blue);
-
         // A name you typed by hand is the most specific statement of intent there is,
         // so it outranks both the matched rule's colours and the valuable colours.
         if (isHighlighted)
@@ -104,40 +102,21 @@ public static class GroundNameOverlay
     }
 
     /// <summary>
-    ///     Decides what to write on an item, in precedence order:
-    ///     the matched rule's custom label, then resolved unique names, then the item name.
-    ///     Returns null when the item should not be drawn at all.
+    ///     Decides what to write on an item. Only two things earn a label: a name you put on the
+    ///     highlight list, and an item one of your filters asked for. Anything else draws nothing,
+    ///     which is the whole point - a label on every unique would bury both.
+    ///     Returns null when the item should not be drawn.
     /// </summary>
-    private static (string Text, bool IsWarning) ResolveText(CustomItemData item, GroundNameOverlaySettings settings,
-        bool isHighlighted)
+    private static string ResolveText(CustomItemData item, GroundNameOverlaySettings settings, bool isHighlighted)
     {
-        var matched = item.IsWanted == true;
+        // A highlighted unique draws whether or not a filter wanted it - the point of the
+        // list is to catch things your filters do not cover.
+        if (isHighlighted) return JoinCandidates(item);
 
-        // A highlighted unique draws whether or not a filter wanted it - the whole point
-        // of the list is to catch things your filters do not cover.
-        if (isHighlighted) return (JoinCandidates(item), false);
+        if (item.IsWanted != true || !settings.DrawForAllFilterMatches) return null;
 
-        if (matched && settings.DrawForAllFilterMatches)
-        {
-            var template = item.MatchedRule?.CustomLabel;
-            if (!string.IsNullOrWhiteSpace(template)) return (ApplyTemplate(template, item), false);
-        }
-
-        if (item.IsUnidentifiedUnique && settings.DrawForAllUnidentifiedUniques)
-        {
-            if (item.UniqueNameCandidates.Count != 0)
-            {
-                if (settings.HideSingleCandidateNames && item.UniqueNameCandidates.Count == 1) return (null, false);
-                return (JoinCandidates(item), false);
-            }
-
-            if (settings.ShowWarningTextForUnknownUniques) return ("???", true);
-        }
-
-        // No custom label and nothing unique-specific to say: fall back to the item's own name.
-        if (matched && settings.DrawForAllFilterMatches) return (item.Name, false);
-
-        return (null, false);
+        var template = item.MatchedRule?.CustomLabel;
+        return !string.IsNullOrWhiteSpace(template) ? ApplyTemplate(template, item) : item.Name;
     }
 
     private static string ApplyTemplate(string template, CustomItemData item)
