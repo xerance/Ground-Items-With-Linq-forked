@@ -39,10 +39,6 @@ public class CustomItemData(
             .ToList()
             : [];
 
-    public bool IsUnidentifiedUnique { get; set; }
-        = queriedItem.TryGetComponent<Mods>(out var rarityMods) && !rarityMods.Identified &&
-          rarityMods.ItemRarity == ItemRarity.Unique;
-
     public float DistanceCustom { get; set; }
 
     public override string ToString()
