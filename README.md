@@ -5,6 +5,21 @@ An ExileApi plugin that highlights ground items matching your `.ifl` filter rule
 This fork adds an on-ground name overlay, per-rule labels/colours/frames/sounds, and a
 name list for tracking specific uniques.
 
+## What gets drawn
+
+Exactly two things earn a label on the ground, and nothing else does:
+
+1. **Filter matches** — an item one of your `.ifl` rules asked for. Each rule can carry
+   its own label text, colours, frame and alert sound.
+2. **Highlight list matches** — a unique whose name you put in the highlight list.
+
+There is deliberately no "label every unique" mode. It existed briefly and was removed:
+labelling everything buries the two signals above, which are the point of the plugin.
+
+Three toggles gate this. `Ground Name Overlay > Enable` turns all of it off.
+`Ground Name Overlay > DrawForAllFilterMatches` off leaves only the highlight list.
+`Unique Highlight > Enable` off leaves only filter matches.
+
 ## Credits
 
 This fork stands on three plugins. All the hard parts — reading the game's item data,
@@ -21,11 +36,12 @@ and the `UniqueArtManager` that resolves an item's art path to its possible uniq
 
 Source of two features ported here:
 
-- **The on-ground name overlay.** The technique in `GroundNameOverlay` — opening a
-  throwaway ImGui window so `SetWindowFontScale` applies, drawing into the background
-  draw list, and picking the text layout that best fits the item's label box — is taken
-  from its `ShowRealUniqueNameOnGround`. Adapted to trigger on filter matches rather
-  than a poe.ninja price threshold, since this plugin has no price feed.
+- **The on-ground name overlay.** The idea in `GroundNameOverlay` — scaling the text to
+  the item's ground label box, and trying each "names per line" split to find the one
+  that fits best — is taken from its `ShowRealUniqueNameOnGround`. Adapted to trigger on
+  filter matches rather than a poe.ninja price threshold, since this plugin has no price
+  feed, and drawn through ExileCore's `Graphics` rather than ImGui, so a failure here
+  cannot unbalance the shared ImGui window stack and break other plugins' overlays.
 - **Sound notifications.** The bundled `default.wav` is its file, copied unchanged. The
   design in `SoundNotifier` — per-item wav files resolved
   by name from the config directory, with a played-tracker so an item alerts once
