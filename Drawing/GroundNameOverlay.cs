@@ -2,8 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using ExileCore.Shared.Helpers;
-using ImGuiNET;
 using Color = SharpDX.Color;
 using RectangleF = SharpDX.RectangleF;
 using Vector2N = System.Numerics.Vector2;
@@ -13,9 +11,10 @@ namespace Ground_Items_With_Linq.Drawing;
 
 /// <summary>
 ///     Draws a name on top of an item's label on the ground.
-///     The drawing technique is ported from Get-Chaos-Value's ShowRealUniqueNameOnGround,
-///     but the text is not limited to uniques: any item matching a filter can be labelled,
-///     and a rule can supply its own template via <see cref="GroundRule.CustomLabel" />.
+///     The fit-to-label technique comes from Get-Chaos-Value's ShowRealUniqueNameOnGround, but
+///     this draws through ExileCore's Graphics rather than ImGui. ImGui window state is global to
+///     the host, so an exception raised between Begin and End leaves the stack unbalanced and
+///     breaks every ImGui overlay drawn after it that frame, in this plugin or any other.
 /// </summary>
 public static class GroundNameOverlay
 {
@@ -25,14 +24,6 @@ public static class GroundNameOverlay
         if (!settings.Enable) return;
 
         var ingameUi = Main.GameController.IngameState.IngameUi;
-
-        // ImGui font scaling only works inside a window, so we open a throwaway one
-        // and draw into the background list. Same trick Get-Chaos-Value uses.
-        ImGui.Begin("GroundItemsWithLinq_NameOverlay",
-            ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.NoBackground | ImGuiWindowFlags.NoInputs |
-            ImGuiWindowFlags.NoFocusOnAppearing | ImGuiWindowFlags.NoNav);
-
-        var drawList = ImGui.GetBackgroundDrawList();
 
         var tooltipRect = ingameUi.ItemOnGroundTooltip is { Address: not 0, IsVisible: true } tooltip
             ? tooltip.GetClientRectCache
@@ -59,16 +50,14 @@ public static class GroundNameOverlay
 
             var (textColor, backgroundColor) = ResolveColors(item, settings, isHighlighted);
 
-            DrawOnItemLabel(drawList, box, BestFittingLayout(box, text), backgroundColor, textColor);
+            DrawOnItemLabel(box, BestFittingLayout(box, text), backgroundColor, textColor);
 
             // The highlight frame wins over a rule frame, matching the colour precedence.
             if (isHighlighted && highlight.DrawLabelFrame)
-                DrawFrame(drawList, box, highlight.FrameThickness.Value, highlight.FrameColor);
+                DrawFrame(box, highlight.FrameThickness.Value, highlight.FrameColor);
             else if (item.IsWanted == true && item.MatchedRule is { DrawFrame: true } framedRule)
-                DrawFrame(drawList, box, settings.RuleFrameThickness.Value, ToColor(framedRule.FrameColor));
+                DrawFrame(box, settings.RuleFrameThickness.Value, ToColor(framedRule.FrameColor));
         }
-
-        ImGui.End();
     }
 
     /// <summary>
@@ -165,35 +154,35 @@ public static class GroundNameOverlay
         return fitted * settings.TextScale.Value;
     }
 
-    private static void DrawFrame(ImDrawListPtr drawList, RectangleF box, int thickness, Color color)
+    private static void DrawFrame(RectangleF box, int thickness, Color color)
     {
         // Inflate by half the thickness so the stroke sits outside the label rather than
         // eating into the item art it is meant to be framing.
-        var offset = thickness / 2f;
-        drawList.AddRect(
-            new Vector2N(box.Left - offset, box.Top - offset),
-            new Vector2N(box.Right + offset, box.Bottom + offset),
-            color.ToImgui(), 0f, ImDrawFlags.None, thickness);
+        var frame = box;
+        frame.Inflate(thickness / 2f, thickness / 2f);
+        Main.Graphics.DrawFrame(frame, color, thickness);
     }
 
-    private static void DrawOnItemLabel(ImDrawListPtr drawList, RectangleF box, (string Text, float Scale) layout,
+    private static void DrawOnItemLabel(RectangleF box, (string Text, float Scale) layout,
         Color backgroundColor, Color textColor)
     {
-        ImGui.SetWindowFontScale(layout.Scale);
-        var textSize = ImGui.CalcTextSize(layout.Text);
-        var textPosition = box.Center.ToVector2Num() - textSize / 2;
+        using (Main.Graphics.SetTextScale(layout.Scale))
+        {
+            var textSize = Main.Graphics.MeasureText(layout.Text);
+            var textPosition = new Vector2N(
+                box.Center.X - textSize.X / 2,
+                box.Center.Y - textSize.Y / 2);
 
-        // Hugging the text keeps the item art visible either side; stretching covers the whole
-        // label, which reads as a solid block of colour in a busy loot pile.
-        var stretch = Main.Settings.GroundNameOverlaySettings.StretchBackgroundToLabel;
-        var backgroundLeft = stretch ? box.Left : textPosition.X;
-        var backgroundRight = stretch ? box.Right : textPosition.X + textSize.X;
+            // Hugging the text keeps the item art visible either side; stretching covers the
+            // whole label, which reads as a solid block of colour in a busy loot pile.
+            var stretch = Main.Settings.GroundNameOverlaySettings.StretchBackgroundToLabel;
+            var left = stretch ? box.Left : textPosition.X;
+            var right = stretch ? box.Right : textPosition.X + textSize.X;
 
-        drawList.AddRectFilled(
-            new Vector2N(backgroundLeft, box.Top + 1),
-            new Vector2N(backgroundRight, box.Bottom - 1),
-            backgroundColor.ToImgui());
-        drawList.AddText(textPosition, textColor.ToImgui(), layout.Text);
-        ImGui.SetWindowFontScale(1);
+            Main.Graphics.DrawBox(
+                new RectangleF(left, box.Top + 1, right - left, box.Height - 2),
+                backgroundColor);
+            Main.Graphics.DrawText(layout.Text, textPosition, textColor);
+        }
     }
 }
