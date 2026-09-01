@@ -108,8 +108,9 @@ public class GroundNameOverlaySettings
     [Menu(null, "Draw for every item that matches one of your filters, using the rule's custom label if it has one")]
     public ToggleNode DrawForAllFilterMatches { get; set; } = new(true);
 
-    [Menu(null, "Draw the resolved real name over unidentified uniques, even if no filter matched them")]
-    public ToggleNode DrawForUnidentifiedUniques { get; set; } = new(true);
+    [Menu(null, "Label EVERY unidentified unique, not just the highlighted ones. Noisy: the " +
+                "highlight list and your filters already cover what you care about")]
+    public ToggleNode DrawForAllUnidentifiedUniques { get; set; } = new(false);
 
     [Menu(null, "Draw ??? over unidentified uniques whose art path is not in the mapping")]
     public ToggleNode ShowWarningTextForUnknownUniques { get; set; } = new(false);

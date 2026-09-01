@@ -123,7 +123,7 @@ public static class GroundNameOverlay
             if (!string.IsNullOrWhiteSpace(template)) return (ApplyTemplate(template, item), false);
         }
 
-        if (item.IsUnidentifiedUnique && settings.DrawForUnidentifiedUniques)
+        if (item.IsUnidentifiedUnique && settings.DrawForAllUnidentifiedUniques)
         {
             if (item.UniqueNameCandidates.Count != 0)
             {
